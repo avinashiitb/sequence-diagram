@@ -186,7 +186,7 @@ export function preprocessMermaidCode(code, isDark) {
       if (isDashed) {
         cssRules.push(`.messageLine${index} { stroke-dasharray: 3, 3 !important; animation: svgFlow 1.2s linear infinite !important; }`);
       } else {
-        cssRules.push(`.messageLine${index} { stroke-dasharray: 6, 3 !important; animation: svgFlow 1.6s linear infinite !important; }`);
+        cssRules.push(`.messageLine${index} { stroke-dasharray: 4, 2 !important; animation: svgFlow 1.6s linear infinite !important; }`);
       }
 
       if (styles) {

@@ -229,7 +229,7 @@ export async function renderSequenceDiagram({ code, paperEl, theme }) {
           path.style.setProperty('stroke-dasharray', '3, 3', 'important');
           path.style.setProperty('animation', 'svgFlow 1.2s linear infinite', 'important');
         } else {
-          path.style.setProperty('stroke-dasharray', '6, 3', 'important');
+          path.style.setProperty('stroke-dasharray', '4, 2', 'important');
           path.style.setProperty('animation', 'svgFlow 1.6s linear infinite', 'important');
         }
 
