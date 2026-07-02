@@ -9,6 +9,5 @@
   "icon": "build/Icons.svg",
   "iconDark": "build/Icons-light.svg",
   "preview": true,
-  "core-plugin": true,
   "color": "indigo"
 }

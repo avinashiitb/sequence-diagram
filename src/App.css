@@ -71,15 +71,18 @@ body {
 
 /* Topbar Styling */
 .topbar-light {
-  height: 48px;
+  height: 40px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 16px;
+  padding: 0 16px 0 20px;
   background-color: var(--bg-secondary);
   border-bottom: 1px solid var(--border-color);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
   z-index: 10;
+  font-family: 'Inter', sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .topbar-left {
@@ -130,7 +133,7 @@ body {
 .workspace-container {
   display: flex;
   flex: 1;
-  height: calc(100vh - 48px);
+  height: calc(100vh - 40px);
   width: 100vw;
   overflow: hidden;
   position: relative;
@@ -284,6 +287,12 @@ body {
   box-shadow: var(--shadow-lg);
   z-index: 50;
   transition: transform 0.2s;
+}
+
+/* In preview mode, move floating toolbar to top-right */
+.preview-mode .floating-toolbar {
+  bottom: auto;
+  top: 20px;
 }
 
 .toolbar-divider {
@@ -514,13 +523,45 @@ body {
 }
 
 .guide-header {
-  height: 48px;
+  height: 40px;
   padding: 0 16px;
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
   background-color: var(--bg-primary);
+}
+
+.guide-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-tertiary);
+  padding: 4px;
+  gap: 4px;
+}
+
+.guide-tabs button {
+  flex: 1;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  font-family: 'Inter', sans-serif;
+}
+
+.guide-tabs button:hover {
+  color: var(--text-primary);
+}
+
+.guide-tabs button.active {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm), 0 1px 3px 0 rgba(0, 0, 0, 0.05);
 }
 
 .guide-title {
@@ -619,6 +660,99 @@ body {
   background-color: var(--bg-tertiary) !important;
   color: var(--accent-color) !important;
   border-color: var(--accent-color) !important;
+}
+
+/* Preview Mode Adjustments */
+.preview-mode .workspace-container {
+  height: 100%;
+}
+
+/* Export Button and Menu overrides to match other plugins */
+.export-icon-btn {
+  align-items: center;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-sizing: border-box;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  font-size: 14px;
+  height: 30px;
+  width: 30px;
+  justify-content: center;
+  transition: all 0.15s ease, transform 0.1s ease;
+}
+
+.export-icon-btn:hover:not(:disabled) {
+  background-color: var(--bg-tertiary);
+  border-color: var(--text-secondary);
+  transform: translateY(-1px);
+}
+
+.export-icon-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.export-icon-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.export-icon-btn.active {
+  background-color: var(--accent-light);
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
+.options-dropdown-menu {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  margin-top: 6px;
+  overflow: hidden;
+  position: absolute;
+  right: 0;
+  width: 200px;
+  z-index: 100;
+}
+
+.menu-section-header {
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 8px 16px 4px;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.menu-item-light {
+  align-items: center;
+  background-color: transparent;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  font-size: 13px;
+  padding: 10px 16px;
+  text-align: left;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  width: 100%;
+}
+
+.menu-item-light:hover {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+/* Custom separator line */
+.topbar-divider {
+  background: var(--border-color);
+  height: 16px;
+  margin: 0 4px;
+  width: 1px;
 }
 
 
