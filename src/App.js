@@ -17,21 +17,21 @@ activate API [bg: #22c55e, border: #166534]
 
 note over API: Validate credentials\\nand hash passwords [bg: #fef9c3, border: #eab308, color: #713f12]
 
-API -> DB: Query user profile record [color: #22c55e, fixed: true]
+API -> DB: Query user profile record [color: #22c55e]
 activate DB [bg: #ec4899, border: #9d174d]
 DB --> API: Return user profile data [color: #64748b]
 deactivate DB
 
-API -> API: Verify security hash [fixed: true]
+API -> API: Verify security hash
 
 alt Success
-  API --> App: 200 OK (JWT Access Token) [color: #22c55e, fixed: true]
+  API --> App: 200 OK (JWT Access Token) [color: #22c55e]
 else Failure
-  API --> App: 401 Unauthorized [color: #ef4444, fixed: true]
+  API --> App: 401 Unauthorized [color: #ef4444]
 end
 
 deactivate API
-App --> User: Render dashboard interface [color: #4f46e5, fixed: true]
+App --> User: Render dashboard interface [color: #4f46e5]
 `;
 
 function App() {

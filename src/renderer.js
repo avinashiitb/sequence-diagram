@@ -219,45 +219,20 @@ export async function renderSequenceDiagram({ code, paperEl, theme }) {
 
     // C. Style Messages & Arrows (Sequential index matching)
     metadata.messages.forEach((msg, idx) => {
-      const path = paperEl.querySelector(`.messageLine${idx}`);
-      if (path) {
-        // Apply moving line flow animations: dashed (fast, short dashes) vs solid (slower, longer dashes)
-        // Check if the user explicitly disabled animation
-        const isAnimated = !(msg.styles && (msg.styles.animated === 'false' || msg.styles.fixed === 'true' || msg.styles.static === 'true'));
-        const isDashed = path.getAttribute('stroke-dasharray') || path.style.strokeDasharray;
-        
-        if (isAnimated) {
-          if (isDashed) {
-            path.style.setProperty('stroke-dasharray', '3, 3', 'important');
-            path.style.setProperty('animation', 'svgFlow 1.2s linear infinite', 'important');
-          } else {
-            path.style.setProperty('stroke-dasharray', '4, 2', 'important');
-            path.style.setProperty('animation', 'svgFlow 1.6s linear infinite', 'important');
-          }
-        } else {
-          if (isDashed) {
-            path.style.setProperty('stroke-dasharray', '3, 3', 'important');
-          } else {
-            path.style.removeProperty('stroke-dasharray');
-          }
-          path.style.removeProperty('animation');
-        }
+      if (!msg.styles) return;
 
-        if (msg.styles) {
-          const color = msg.styles.stroke || msg.styles.color || msg.styles.linecolor;
-          if (color) {
-            path.style.setProperty('stroke', color, 'important');
-          }
-        }
+      const color = msg.styles.stroke || msg.styles.color || msg.styles.linecolor;
+      const labelColor = msg.styles.labelcolor || msg.styles.textcolor || msg.styles.textColor || msg.styles.color;
+
+      const path = paperEl.querySelector(`path.messageLine${idx}`);
+      if (path && color) {
+        path.style.setProperty('stroke', color, 'important');
       }
 
-      if (msg.styles) {
-        const labelColor = msg.styles.labelcolor || msg.styles.textcolor || msg.styles.textColor || msg.styles.color;
-        const text = paperEl.querySelector(`text.messageText${idx}`);
-        if (text && labelColor) {
-          text.style.setProperty('fill', labelColor, 'important');
-          text.querySelectorAll('tspan').forEach(ts => ts.style.setProperty('fill', labelColor, 'important'));
-        }
+      const text = paperEl.querySelector(`text.messageText${idx}`);
+      if (text && labelColor) {
+        text.style.setProperty('fill', labelColor, 'important');
+        text.querySelectorAll('tspan').forEach(ts => ts.style.setProperty('fill', labelColor, 'important'));
       }
 
       // Dynamic arrowhead markers
@@ -265,12 +240,9 @@ export async function renderSequenceDiagram({ code, paperEl, theme }) {
       markers.forEach(marker => {
         if (marker.id && marker.id.includes(`arrowhead-${idx}`)) {
           marker.querySelectorAll('path').forEach(p => {
-            if (msg.styles) {
-              const color = msg.styles.stroke || msg.styles.color || msg.styles.linecolor;
-              if (color) {
-                p.style.setProperty('fill', color, 'important');
-                p.style.setProperty('stroke', color, 'important');
-              }
+            if (color) {
+              p.style.setProperty('fill', color, 'important');
+              p.style.setProperty('stroke', color, 'important');
             }
           });
         }
