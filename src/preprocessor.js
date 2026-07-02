@@ -170,6 +170,7 @@ export function preprocessMermaidCode(code, isDark) {
       let text = match[4].trim();
 
       // Convert simple arrows: -> becomes ->>, --> becomes -->>
+      const originalArrow = arrow;
       if (arrow === '->') arrow = '->>';
       else if (arrow === '-->') arrow = '-->>';
 
@@ -178,11 +179,20 @@ export function preprocessMermaidCode(code, isDark) {
       finalLine = `${from}${arrow}${to}: ${text}`;
       processedLines.push(finalLine);
 
+      const index = messageCount - 1;
+      const isDashed = originalArrow === '-->' || arrow === '-->>';
+      
+      // Inject moving line flow animations: dashed (fast, short dashes) vs solid (slower, longer dashes)
+      if (isDashed) {
+        cssRules.push(`path.messageLine${index} { stroke-dasharray: 6, 4 !important; animation: svgFlow 1.2s linear infinite !important; }`);
+      } else {
+        cssRules.push(`path.messageLine${index} { stroke-dasharray: 12, 4 !important; animation: svgFlow 1.6s linear infinite !important; }`);
+      }
+
       if (styles) {
         const color = styles.stroke || styles.color || styles.linecolor;
         const labelColor = styles.labelcolor || styles.textcolor || styles.color;
         
-        const index = messageCount - 1;
         if (color) {
           cssRules.push(`path.messageLine${index} { stroke: ${color} !important; }`);
           cssRules.push(`.arrowheadPath { fill: ${color} !important; stroke: ${color} !important; }`);
@@ -202,6 +212,9 @@ export function preprocessMermaidCode(code, isDark) {
   // Inject FontAwesome font-family onto actor text elements globally to render vector unicode glyphs
   cssRules.push(`g.actor text.actor { font-family: "Font Awesome 6 Free", "Outfit", "Inter", sans-serif !important; font-weight: 900 !important; }`);
   cssRules.push(`g.actor text.actor tspan { font-family: "Font Awesome 6 Free", "Outfit", "Inter", sans-serif !important; font-weight: 900 !important; }`);
+
+  // Add the moving line keyframe animation (LCM of 10 and 16 is 80, ensuring perfect loop synchronization)
+  cssRules.push(`@keyframes svgFlow { from { stroke-dashoffset: 80; } to { stroke-dashoffset: 0; } }`);
 
   // Build Frontmatter with theme configurations and injected CSS rules
   const cssString = cssRules.join('\n');

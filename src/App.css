@@ -755,4 +755,14 @@ body {
   width: 1px;
 }
 
+/* Moving line keyframe animations for arrow paths */
+@keyframes svgFlow {
+  from {
+    stroke-dashoffset: 80;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
 
