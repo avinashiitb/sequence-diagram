@@ -182,11 +182,21 @@ export function preprocessMermaidCode(code, isDark) {
       const index = messageCount - 1;
       const isDashed = originalArrow === '-->' || arrow === '-->>';
       
+      const isAnimated = !(styles && (styles.animated === 'false' || styles.fixed === 'true' || styles.static === 'true'));
+      
       // Inject moving line flow animations: dashed (fast, short dashes) vs solid (slower, longer dashes)
-      if (isDashed) {
-        cssRules.push(`.messageLine${index} { stroke-dasharray: 3, 3 !important; animation: svgFlow 1.2s linear infinite !important; }`);
+      if (isAnimated) {
+        if (isDashed) {
+          cssRules.push(`.messageLine${index} { stroke-dasharray: 3, 3 !important; animation: svgFlow 1.2s linear infinite !important; }`);
+        } else {
+          cssRules.push(`.messageLine${index} { stroke-dasharray: 4, 2 !important; animation: svgFlow 1.6s linear infinite !important; }`);
+        }
       } else {
-        cssRules.push(`.messageLine${index} { stroke-dasharray: 4, 2 !important; animation: svgFlow 1.6s linear infinite !important; }`);
+        if (isDashed) {
+          cssRules.push(`.messageLine${index} { stroke-dasharray: 3, 3 !important; animation: none !important; }`);
+        } else {
+          cssRules.push(`.messageLine${index} { stroke-dasharray: none !important; animation: none !important; }`);
+        }
       }
 
       if (styles) {

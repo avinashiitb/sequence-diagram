@@ -222,15 +222,25 @@ export async function renderSequenceDiagram({ code, paperEl, theme }) {
       const path = paperEl.querySelector(`.messageLine${idx}`);
       if (path) {
         // Apply moving line flow animations: dashed (fast, short dashes) vs solid (slower, longer dashes)
-        // Dashed lines normally have dasharray set by Mermaid
+        // Check if the user explicitly disabled animation
+        const isAnimated = !(msg.styles && (msg.styles.animated === 'false' || msg.styles.fixed === 'true' || msg.styles.static === 'true'));
         const isDashed = path.getAttribute('stroke-dasharray') || path.style.strokeDasharray;
         
-        if (isDashed) {
-          path.style.setProperty('stroke-dasharray', '3, 3', 'important');
-          path.style.setProperty('animation', 'svgFlow 1.2s linear infinite', 'important');
+        if (isAnimated) {
+          if (isDashed) {
+            path.style.setProperty('stroke-dasharray', '3, 3', 'important');
+            path.style.setProperty('animation', 'svgFlow 1.2s linear infinite', 'important');
+          } else {
+            path.style.setProperty('stroke-dasharray', '4, 2', 'important');
+            path.style.setProperty('animation', 'svgFlow 1.6s linear infinite', 'important');
+          }
         } else {
-          path.style.setProperty('stroke-dasharray', '4, 2', 'important');
-          path.style.setProperty('animation', 'svgFlow 1.6s linear infinite', 'important');
+          if (isDashed) {
+            path.style.setProperty('stroke-dasharray', '3, 3', 'important');
+          } else {
+            path.style.removeProperty('stroke-dasharray');
+          }
+          path.style.removeProperty('animation');
         }
 
         if (msg.styles) {
