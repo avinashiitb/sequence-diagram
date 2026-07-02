@@ -226,10 +226,10 @@ export async function renderSequenceDiagram({ code, paperEl, theme }) {
         const isDashed = path.getAttribute('stroke-dasharray') || path.style.strokeDasharray;
         
         if (isDashed) {
-          path.style.setProperty('stroke-dasharray', '6, 4', 'important');
+          path.style.setProperty('stroke-dasharray', '3, 3', 'important');
           path.style.setProperty('animation', 'svgFlow 1.2s linear infinite', 'important');
         } else {
-          path.style.setProperty('stroke-dasharray', '12, 4', 'important');
+          path.style.setProperty('stroke-dasharray', '6, 3', 'important');
           path.style.setProperty('animation', 'svgFlow 1.6s linear infinite', 'important');
         }
 

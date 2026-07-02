@@ -184,9 +184,9 @@ export function preprocessMermaidCode(code, isDark) {
       
       // Inject moving line flow animations: dashed (fast, short dashes) vs solid (slower, longer dashes)
       if (isDashed) {
-        cssRules.push(`.messageLine${index} { stroke-dasharray: 6, 4 !important; animation: svgFlow 1.2s linear infinite !important; }`);
+        cssRules.push(`.messageLine${index} { stroke-dasharray: 3, 3 !important; animation: svgFlow 1.2s linear infinite !important; }`);
       } else {
-        cssRules.push(`.messageLine${index} { stroke-dasharray: 12, 4 !important; animation: svgFlow 1.6s linear infinite !important; }`);
+        cssRules.push(`.messageLine${index} { stroke-dasharray: 6, 3 !important; animation: svgFlow 1.6s linear infinite !important; }`);
       }
 
       if (styles) {
@@ -213,8 +213,8 @@ export function preprocessMermaidCode(code, isDark) {
   cssRules.push(`g.actor text.actor { font-family: "Font Awesome 6 Free", "Outfit", "Inter", sans-serif !important; font-weight: 900 !important; }`);
   cssRules.push(`g.actor text.actor tspan { font-family: "Font Awesome 6 Free", "Outfit", "Inter", sans-serif !important; font-weight: 900 !important; }`);
 
-  // Add the moving line keyframe animation (LCM of 10 and 16 is 80, ensuring perfect loop synchronization)
-  cssRules.push(`@keyframes svgFlow { from { stroke-dashoffset: 80; } to { stroke-dashoffset: 0; } }`);
+  // Add the moving line keyframe animation (LCM of 6 and 9 is 18, so 72 ensures perfect loop synchronization)
+  cssRules.push(`@keyframes svgFlow { from { stroke-dashoffset: 72; } to { stroke-dashoffset: 0; } }`);
 
   // Build Frontmatter with theme configurations and injected CSS rules
   const cssString = cssRules.join('\n');
