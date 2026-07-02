@@ -219,7 +219,7 @@ export async function renderSequenceDiagram({ code, paperEl, theme }) {
 
     // C. Style Messages & Arrows (Sequential index matching)
     metadata.messages.forEach((msg, idx) => {
-      const path = paperEl.querySelector(`path.messageLine${idx}`);
+      const path = paperEl.querySelector(`.messageLine${idx}`);
       if (path) {
         // Apply moving line flow animations: dashed (fast, short dashes) vs solid (slower, longer dashes)
         // Dashed lines normally have dasharray set by Mermaid

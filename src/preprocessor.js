@@ -184,9 +184,9 @@ export function preprocessMermaidCode(code, isDark) {
       
       // Inject moving line flow animations: dashed (fast, short dashes) vs solid (slower, longer dashes)
       if (isDashed) {
-        cssRules.push(`path.messageLine${index} { stroke-dasharray: 6, 4 !important; animation: svgFlow 1.2s linear infinite !important; }`);
+        cssRules.push(`.messageLine${index} { stroke-dasharray: 6, 4 !important; animation: svgFlow 1.2s linear infinite !important; }`);
       } else {
-        cssRules.push(`path.messageLine${index} { stroke-dasharray: 12, 4 !important; animation: svgFlow 1.6s linear infinite !important; }`);
+        cssRules.push(`.messageLine${index} { stroke-dasharray: 12, 4 !important; animation: svgFlow 1.6s linear infinite !important; }`);
       }
 
       if (styles) {
@@ -194,7 +194,7 @@ export function preprocessMermaidCode(code, isDark) {
         const labelColor = styles.labelcolor || styles.textcolor || styles.color;
         
         if (color) {
-          cssRules.push(`path.messageLine${index} { stroke: ${color} !important; }`);
+          cssRules.push(`.messageLine${index} { stroke: ${color} !important; }`);
           cssRules.push(`.arrowheadPath { fill: ${color} !important; stroke: ${color} !important; }`);
           cssRules.push(`marker[id*="arrowhead"] path { fill: ${color} !important; stroke: ${color} !important; }`);
         }
