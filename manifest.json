@@ -1,0 +1,14 @@
+{
+  "id": "sequence-diagram",
+  "name": "Sequence Diagram",
+  "version": "1.0.0",
+  "description": "A sequence diagram plugin using JointJS and CodeMirror",
+  "fileType": "sequence-diagram",
+  "route": "/sequence-diagram/:file_id",
+  "entry": "/build/index.html",
+  "icon": "build/Icons.svg",
+  "iconDark": "build/Icons-light.svg",
+  "preview": true,
+  "core-plugin": true,
+  "color": "indigo"
+}
