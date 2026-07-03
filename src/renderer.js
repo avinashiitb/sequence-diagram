@@ -261,6 +261,44 @@ export async function renderSequenceDiagram({ code, paperEl, theme }) {
       if (border) activations[idx].style.setProperty('stroke', border, 'important');
     });
 
+    // E. Convert Curved Self-loops to Rectangular Paths with Rounded Corners
+    const paths = Array.from(paperEl.querySelectorAll('path'));
+    paths.forEach(path => {
+      const d = path.getAttribute('d');
+      if (!d) return;
+      const match = d.match(/^M\s*([\d.-]+)[\s,]+([\d.-]+)\s*C\s*([\d.-]+)[\s,]+([\d.-]+)\s*([\d.-]+)[\s,]+([\d.-]+)\s*([\d.-]+)[\s,]+([\d.-]+)$/i);
+      if (match) {
+        const x1_f = parseFloat(match[1]);
+        const y1_f = parseFloat(match[2]);
+        const x_turn_f = parseFloat(match[3]);
+        const x2_f = parseFloat(match[7]);
+        const y2_f = parseFloat(match[8]);
+
+        const height = Math.abs(y2_f - y1_f);
+        const r = Math.min(6, height / 2); // Corner radius capped safely
+        let newD = '';
+
+        if (x_turn_f > x1_f) {
+          // Loop to the right
+          newD = `M ${x1_f},${y1_f} ` +
+                 `L ${x_turn_f - r},${y1_f} ` +
+                 `A ${r},${r} 0 0,1 ${x_turn_f},${y1_f + r} ` +
+                 `L ${x_turn_f},${y2_f - r} ` +
+                 `A ${r},${r} 0 0,1 ${x_turn_f - r},${y2_f} ` +
+                 `L ${x2_f},${y2_f}`;
+        } else {
+          // Loop to the left
+          newD = `M ${x1_f},${y1_f} ` +
+                 `L ${x_turn_f + r},${y1_f} ` +
+                 `A ${r},${r} 0 0,0 ${x_turn_f},${y1_f + r} ` +
+                 `L ${x_turn_f},${y2_f - r} ` +
+                 `A ${r},${r} 0 0,0 ${x_turn_f + r},${y2_f} ` +
+                 `L ${x2_f},${y2_f}`;
+        }
+        path.setAttribute('d', newD);
+      }
+    });
+
   } catch (err) {
     console.warn('Post-render DOM styling warning:', err);
   }
