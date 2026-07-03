@@ -755,4 +755,11 @@ body {
   width: 1px;
 }
 
+/* Moving arrow flow animation keyframes */
+@keyframes mermaidFlowLine {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
 

@@ -217,36 +217,72 @@ export async function renderSequenceDiagram({ code, paperEl, theme }) {
       });
     });
 
-    // C. Style Messages & Arrows (Sequential index matching)
+    // C. Style Messages & Arrows (Sequential DOM element matching)
+    const messageLines = Array.from(paperEl.querySelectorAll('path, line')).filter(el => {
+      const cls = el.getAttribute('class') || '';
+      return cls.includes('messageLine');
+    });
+
+    const messageTexts = Array.from(paperEl.querySelectorAll('text')).filter(el => {
+      const cls = el.getAttribute('class') || '';
+      return cls.includes('messageText');
+    });
+
     metadata.messages.forEach((msg, idx) => {
       if (!msg.styles) return;
 
       const color = msg.styles.stroke || msg.styles.color || msg.styles.linecolor;
       const labelColor = msg.styles.labelcolor || msg.styles.textcolor || msg.styles.textColor || msg.styles.color;
+      const isMoving = msg.styles.moving === 'true' || msg.styles.moving === 'yes' || msg.styles.moving === '1';
 
-      const path = paperEl.querySelector(`path.messageLine${idx}`);
-      if (path && color) {
-        path.style.setProperty('stroke', color, 'important');
-      }
-
-      const text = paperEl.querySelector(`text.messageText${idx}`);
-      if (text && labelColor) {
-        text.style.setProperty('fill', labelColor, 'important');
-        text.querySelectorAll('tspan').forEach(ts => ts.style.setProperty('fill', labelColor, 'important'));
-      }
-
-      // Dynamic arrowhead markers
-      const markers = Array.from(paperEl.querySelectorAll('marker'));
-      markers.forEach(marker => {
-        if (marker.id && marker.id.includes(`arrowhead-${idx}`)) {
-          marker.querySelectorAll('path').forEach(p => {
-            if (color) {
-              p.style.setProperty('fill', color, 'important');
-              p.style.setProperty('stroke', color, 'important');
+      const lineEl = messageLines[idx];
+      if (lineEl) {
+        if (color) {
+          lineEl.style.setProperty('stroke', color, 'important');
+          
+          // Clone the shared marker to give this line its own customized arrowhead color
+          const markerAttr = lineEl.getAttribute('marker-end');
+          if (markerAttr) {
+            const markerIdMatch = markerAttr.match(/#([\w-]+)/);
+            if (markerIdMatch) {
+              const markerId = markerIdMatch[1];
+              const originalMarker = paperEl.querySelector(`#${markerId}`);
+              if (originalMarker) {
+                const newMarkerId = `${markerId}-custom-${idx}`;
+                let customMarker = paperEl.querySelector(`#${newMarkerId}`);
+                if (!customMarker) {
+                  customMarker = originalMarker.cloneNode(true);
+                  customMarker.setAttribute('id', newMarkerId);
+                  originalMarker.parentNode.appendChild(customMarker);
+                }
+                
+                customMarker.querySelectorAll('path, polygon, polyline').forEach(p => {
+                  p.style.setProperty('fill', color, 'important');
+                  p.style.setProperty('stroke', color, 'important');
+                });
+                
+                lineEl.setAttribute('marker-end', `url(#${newMarkerId})`);
+              }
             }
-          });
+          }
         }
-      });
+
+        if (isMoving) {
+          // Detect if line is dotted/dashed by checking stroke-dasharray attribute
+          const strokeDash = lineEl.getAttribute('stroke-dasharray');
+          const isDotted = strokeDash && strokeDash !== 'none';
+          const dashPattern = isDotted ? '2, 2' : '4, 2';
+          
+          lineEl.style.setProperty('stroke-dasharray', dashPattern, 'important');
+          lineEl.style.setProperty('animation', 'mermaidFlowLine 1s linear infinite', 'important');
+        }
+      }
+
+      const textEl = messageTexts[idx];
+      if (textEl && labelColor) {
+        textEl.style.setProperty('fill', labelColor, 'important');
+        textEl.querySelectorAll('tspan').forEach(ts => ts.style.setProperty('fill', labelColor, 'important'));
+      }
     });
 
     // D. Style Activations (Sequential index matching)

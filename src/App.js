@@ -728,12 +728,13 @@ database DB as Database
 Syntax:
 - Solid Arrow (Synchronous / Request): [ID1] ->> [ID2]: [Message text]
 - Dashed Arrow (Asynchronous / Response): [ID1] -->> [ID2]: [Message text]
-Custom color inside brackets (optional):
-- [ID1] ->> [ID2]: [Message text] [color: #color]
+Custom styling (color and flow animation) inside brackets (optional):
+- [ID1] ->> [ID2]: [Message text] [color: #color, moving: true]
+Note: Set 'moving: true' to add animated flowing dash effects to arrows representing active data transfers.
 
 Example:
-User ->> Web: Place order [color: #3b82f6]
-Web -->> User: Show confirmation
+User ->> Web: Place order [color: #3b82f6, moving: true]
+Web -->> User: Show confirmation [moving: true]
 
 3. ACTIVATION RECORDS:
 Syntax:
@@ -1086,9 +1087,9 @@ When asked to generate a sequence diagram, only output the raw DSL code. Do not 
                     </div>
                   </div>
                   <div className="guide-item">
-                    <span className="guide-item-title">Custom Connector Colors</span>
+                    <span className="guide-item-title">Custom Colors & Flow Animation</span>
                     <div className="guide-code-block">
-                      User ->> Web: Login [color: #3b82f6]
+                      User ->> Web: Login [color: #3b82f6, moving: true]
                     </div>
                   </div>
                 </div>
