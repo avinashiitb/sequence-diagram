@@ -1,7 +1,7 @@
 {
   "id": "sequence-diagram",
   "name": "Sequence Diagram",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "description": "A sequence diagram plugin using JointJS and CodeMirror",
   "fileType": "sequence-diagram",
   "route": "/sequence-diagram/:file_id",
