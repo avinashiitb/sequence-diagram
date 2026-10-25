@@ -9,5 +9,43 @@
   "icon": "build/Icons.svg",
   "iconDark": "build/Icons-light.svg",
   "preview": true,
-  "color": "indigo"
+  "color": "indigo",
+  "validator": "validator.js",
+  "llmparser": "llmparser.js",
+  "methods": {
+    "llmparser": "llmparser.js",
+    "validator": "validator.js"
+  },
+  "aiContext": {
+    "documentContext": "DevScribe Sequence Diagram Specification:\nYou are generating an interactive Sequence Diagram showing the step-by-step message exchange and lifecycle flow between components.\n\nOUTPUT FORMAT RULES:\n1. Output MUST be the raw Sequence Diagram DSL text.\n2. Do NOT wrap the code in markdown code fences (do NOT use ```sequence or ```).\n3. Do NOT include conversational preamble or explanation outside the diagram code.\n\nSYNTAX RULES:\n1. DEFINING COMPONENTS\nDeclare your participants at the top of the diagram:\nactor User as Customer\nparticipant Web as Web App\ndatabase DB as Database\nCustom Styling: Provide background, border, and text colors inside brackets:\nactor User [bg: #eff6ff, border: #3b82f6, color: #1e40af]\nparticipant App as Web App [bg: #fcf7f2, border: #f97316, color: #9a3412]\nparticipant API as Gateway Service [bg: #f0fdf4, border: #22c55e, color: #166534]\ndatabase DB as Primary Database [bg: #fdf2f8, border: #ec4899, color: #9d174d]\n\n2. DEFINING ARROWS\nSolid Arrow (Request / Synch):\nUser ->> Web: Place order\nor\nUser -> Web: Place order\nDashed Arrow (Response / Return):\nWeb -->> User: Show confirmation\nor\nWeb --> User: Show confirmation\nCustom Colors & Flow Animation:\nUser -> App: Enter credentials [moving: true]\nApp -> API: POST /auth/login (user, pass) [color: #4f46e5, moving: true]\n\n3. ACTIVATION RECORDS\nShow when a component is actively processing a request:\nactivate Web [bg: #eff6ff, border: #3b82f6]\ndeactivate Web\n\n4. CONDITIONAL BLOCKS\nWrap messages in alt/else segments to show logical choices:\nalt in stock\n  API -> DB: Query\nelse out of stock\n  API --> User: Error\nend\n\n5. NOTE BLOCKS\nAdd annotations over or relative to lifelines:\nnote over API: Process data\nnote left of Web: Validate [bg: #fef9c3]\n\nExample:\ntitle: Authentication & Query Flow\n\nactor User [bg: #eff6ff, border: #3b82f6, color: #1e40af]\nparticipant App as Web App [bg: #fcf7f2, border: #f97316, color: #9a3412]\nparticipant API as Gateway Service [bg: #f0fdf4, border: #22c55e, color: #166534]\ndatabase DB as Primary Database [bg: #fdf2f8, border: #ec4899, color: #9d174d]\n\nUser -> App: Enter username & password [moving: true]\nApp -> API: POST /auth/login (user, pass) [color: #4f46e5, moving: true]\nactivate API [bg: #22c55e, border: #166534]\n\nnote over API: Validate credentials\\nand hash passwords [bg: #fef9c3, border: #eab308, color: #713f12]\n\nAPI -> DB: Query user profile record [color: #22c55e, moving: true]\nactivate DB [bg: #ec4899, border: #9d174d]\nDB --> API: Return user profile data [color: #64748b, moving: true]\ndeactivate DB\n\nAPI -> API: Verify security hash [moving: true]\n\nalt Success\n  API --> App: 200 OK (JWT Access Token) [color: #22c55e, moving: true]\nelse Failure\n  API --> App: 401 Unauthorized [color: #ef4444, moving: true]\nend\n\ndeactivate API\nApp --> User: Render dashboard interface [color: #4f46e5, moving: true]",
+    "fileContext": {
+      "fileType": "sequence-diagram",
+      "name": "Sequence Diagram",
+      "description": "- 'sequence-diagram' (Sequence Diagram): Interactive sequence and message-flow diagrams showing step-by-step communication between actors, services, gateways, and databases with synchronous/asynchronous calls, activation bars, and conditional alt/else blocks (aliases: sequence diagram, message flow, interaction diagram, lifelines).",
+      "naturalLanguageHints": [
+        "sequence diagram",
+        "sequence",
+        "message flow",
+        "interaction diagram",
+        "lifeline",
+        "lifelines",
+        "call flow"
+      ]
+    },
+    "name": "Sequence Diagram",
+    "purpose": "Draw interactive sequence and message-flow diagrams between actors, services, gateways, and databases.",
+    "useWhen": [
+      "The user asks for a sequence diagram, interaction flow, or step-by-step message exchange between participants.",
+      "The user specifies 'sequence-diagram' fileType."
+    ],
+    "naturalLanguageHints": [
+      "sequence diagram",
+      "sequence",
+      "message flow",
+      "interaction diagram",
+      "lifeline",
+      "lifelines",
+      "call flow"
+    ]
+  }
 }

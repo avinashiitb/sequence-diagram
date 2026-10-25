@@ -1,6 +1,6 @@
 {
   "name": "sequence-diagram",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "private": true,
   "homepage": "./",
   "dependencies": {
@@ -21,7 +21,11 @@
     "build": "craco build",
     "test": "craco test",
     "eject": "react-scripts eject",
-    "package": "mkdir -p release && zip -r release/sequence-diagram-$npm_package_version.zip manifest.json build/"
+    "package": "mkdir -p release && zip -r release/sequence-diagram-$npm_package_version.zip manifest.json validator.js llmparser.js build/"
+  },
+  "methods": {
+    "llmparser": "llmparser.js",
+    "validator": "validator.js"
   },
   "eslintConfig": {
     "extends": [
