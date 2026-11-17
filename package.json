@@ -21,7 +21,8 @@
     "build": "craco build",
     "test": "craco test",
     "eject": "react-scripts eject",
-    "package": "mkdir -p release && zip -r release/sequence-diagram-$npm_package_version.zip manifest.json validator.js llmparser.js build/"
+    "package": "mkdir -p release && zip -r release/sequence-diagram-$npm_package_version.zip manifest.json validator.js llmparser.js build/",
+    "release": "npm run build && npm run package"
   },
   "methods": {
     "llmparser": "llmparser.js",

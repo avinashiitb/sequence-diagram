@@ -65,6 +65,23 @@ export async function renderSequenceDiagram({ code, paperEl, theme }) {
   // 1. Preprocess the code to translate custom bracket styling and arrows
   const preprocessedCode = preprocessMermaidCode(code, isDark);
 
+  // If no diagram elements were defined, clear canvas and return clean dummy paper
+  const contentLines = preprocessedCode.split('\n').filter(l => {
+    const s = l.trim();
+    return s && !s.startsWith('%') && !s.startsWith('{') && !s.startsWith('}') && !s.startsWith('"') && s !== 'sequenceDiagram';
+  });
+
+  if (contentLines.length === 0) {
+    paperEl.innerHTML = '';
+    return {
+      paper: {
+        scale: () => {},
+        translate: () => {},
+        remove: () => { paperEl.innerHTML = ''; }
+      }
+    };
+  }
+
   // 2. Initialize Mermaid with correct configuration
   mermaid.initialize({
     startOnLoad: false,
@@ -180,6 +197,12 @@ export async function renderSequenceDiagram({ code, paperEl, theme }) {
         // Find nearest parent <g> group representing this participant box
         const parentGroup = textEl.closest('g');
         if (parentGroup) {
+          parentGroup.setAttribute('data-component-type', 'participant');
+          parentGroup.setAttribute('data-component-alias', alias);
+          parentGroup.setAttribute('data-component-index', String(idx));
+          parentGroup.classList.add('seq-selectable');
+          parentGroup.style.cursor = 'pointer';
+
           // Style all SVG rectangles/circles/paths inside this group
           const shapes = parentGroup.querySelectorAll('rect, circle, path');
           shapes.forEach(shape => {
@@ -191,13 +214,27 @@ export async function renderSequenceDiagram({ code, paperEl, theme }) {
 
       // Style corresponding descending lifeline line (Mermaid renders lifelines in reverse order)
       const lifelineIdx = numP - 1 - idx;
-      if (lifelines[lifelineIdx] && border) {
-        lifelines[lifelineIdx].style.setProperty('stroke', border, 'important');
+      if (lifelines[lifelineIdx]) {
+        lifelines[lifelineIdx].setAttribute('data-component-type', 'participant');
+        lifelines[lifelineIdx].setAttribute('data-component-alias', alias);
+        lifelines[lifelineIdx].setAttribute('data-component-index', String(idx));
+        lifelines[lifelineIdx].classList.add('seq-selectable');
+        lifelines[lifelineIdx].style.cursor = 'pointer';
+        if (border) {
+          lifelines[lifelineIdx].style.setProperty('stroke', border, 'important');
+        }
       }
     });
 
     // B. Style Note Boxes (Sequential index matching)
     const noteGroups = Array.from(paperEl.querySelectorAll('g.note'));
+    noteGroups.forEach((ng, idx) => {
+      ng.setAttribute('data-component-type', 'note');
+      ng.setAttribute('data-component-index', String(idx));
+      ng.classList.add('seq-selectable');
+      ng.style.cursor = 'pointer';
+    });
+
     metadata.notes.forEach((note, idx) => {
       if (!note.styles || !noteGroups[idx]) return;
       
@@ -226,6 +263,21 @@ export async function renderSequenceDiagram({ code, paperEl, theme }) {
     const messageTexts = Array.from(paperEl.querySelectorAll('text')).filter(el => {
       const cls = el.getAttribute('class') || '';
       return cls.includes('messageText');
+    });
+
+    // Tag all message lines and texts for interactivity
+    messageLines.forEach((lineEl, idx) => {
+      lineEl.setAttribute('data-component-type', 'message');
+      lineEl.setAttribute('data-component-index', String(idx));
+      lineEl.classList.add('seq-selectable');
+      lineEl.style.cursor = 'pointer';
+    });
+
+    messageTexts.forEach((textEl, idx) => {
+      textEl.setAttribute('data-component-type', 'message');
+      textEl.setAttribute('data-component-index', String(idx));
+      textEl.classList.add('seq-selectable');
+      textEl.style.cursor = 'pointer';
     });
 
     metadata.messages.forEach((msg, idx) => {
@@ -287,6 +339,13 @@ export async function renderSequenceDiagram({ code, paperEl, theme }) {
 
     // D. Style Activations (Sequential index matching)
     const activations = Array.from(paperEl.querySelectorAll('rect.activation'));
+    activations.forEach((actEl, idx) => {
+      actEl.setAttribute('data-component-type', 'activation');
+      actEl.setAttribute('data-component-index', String(idx));
+      actEl.classList.add('seq-selectable');
+      actEl.style.cursor = 'pointer';
+    });
+
     metadata.activations.forEach((act, idx) => {
       if (!act.styles || !activations[idx]) return;
 

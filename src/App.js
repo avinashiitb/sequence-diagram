@@ -3,8 +3,21 @@ import CodeMirror from '@uiw/react-codemirror';
 import { EditorView } from '@codemirror/view';
 import './App.css';
 import { renderSequenceDiagram } from './renderer';
+import {
+  parseSequenceDSL,
+  updateParticipantInCode,
+  deleteParticipantFromCode,
+  updateMessageInCode,
+  deleteMessageFromCode,
+  updateNoteInCode,
+  deleteNoteFromCode,
+} from './utils/sequenceSync';
+import { SequencePropertiesPanel } from './components/SequencePropertiesPanel';
 
-const DEFAULT_CODE = `title: Authentication & Query Flow
+const INITIAL_CODE = `sequenceDiagram
+`;
+
+const DEFAULT_EXAMPLE_CODE = `title: Authentication & Query Flow
 
 actor User [bg: #eff6ff, border: #3b82f6, color: #1e40af]
 participant App as Web App [bg: #fcf7f2, border: #f97316, color: #9a3412]
@@ -35,7 +48,7 @@ App --> User: Render dashboard interface [color: #4f46e5]
 `;
 
 function App() {
-  const [code, setCode] = useState(DEFAULT_CODE);
+  const [code, setCode] = useState(INITIAL_CODE);
   const [isReady, setIsReady] = useState(false);
   const [fileName, setFileName] = useState('sequence.txt');
   const [breadcrumbs, setBreadcrumbs] = useState([]);
@@ -56,9 +69,18 @@ function App() {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [guideTab, setGuideTab] = useState('syntax');
 
+  // Selection & Properties Panel state
+  const [selectedItem, setSelectedItem] = useState(null);
+
   const hasAutoFittedRef = useRef(false);
   const zoomRef = useRef(zoom);
   const translateRef = useRef(translate);
+  const codeRef = useRef(code);
+  const mouseDownPosRef = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    codeRef.current = code;
+  }, [code]);
 
   useEffect(() => {
     hasAutoFittedRef.current = false;
@@ -331,7 +353,18 @@ function App() {
     const timer = setTimeout(async () => {
       try {
         if (!code || code.trim().length === 0) {
-          setParseError('Add Mermaid code to draw a sequence diagram.');
+          setParseError(null);
+          if (paperInstanceRef.current) {
+            try {
+              paperInstanceRef.current.paper.remove();
+            } catch (e) {
+              console.warn('Failed to remove old paper:', e);
+            }
+            paperInstanceRef.current = null;
+          }
+          if (canvasElRef.current) {
+            canvasElRef.current.innerHTML = '';
+          }
           return;
         }
 
@@ -485,13 +518,207 @@ function App() {
     return () => resizeObserver.disconnect();
   }, [isPreview, handleZoomFit]);
 
+  // Non-passive wheel handler: Trackpad Pinch / Cmd+Scroll zooms centered at cursor; regular scroll pans
+  useEffect(() => {
+    const container = canvasContainerRef.current;
+    if (!container) return;
+
+    const onWheel = (e) => {
+      e.preventDefault();
+
+      if (e.ctrlKey || e.metaKey) {
+        // Zoom centered on cursor position
+        const rect = container.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
+        const currentZoom = zoomRef.current;
+        const newZoom = Math.max(0.25, Math.min(3.0, currentZoom * zoomFactor));
+
+        if (newZoom !== currentZoom) {
+          const canvasX = (mouseX - translateRef.current.x) / currentZoom;
+          const canvasY = (mouseY - translateRef.current.y) / currentZoom;
+
+          const nextX = mouseX - canvasX * newZoom;
+          const nextY = mouseY - canvasY * newZoom;
+
+          setZoom(newZoom);
+          setTranslate({ x: nextX, y: nextY });
+        }
+      } else {
+        // Standard two-finger or wheel pan
+        setTranslate((prev) => ({
+          x: prev.x - e.deltaX,
+          y: prev.y - e.deltaY,
+        }));
+      }
+    };
+
+    container.addEventListener('wheel', onWheel, { passive: false });
+    return () => container.removeEventListener('wheel', onWheel);
+  }, []);
+
+  // Parse structured items from code
+  const parsedDSL = useMemo(() => {
+    try {
+      return parseSequenceDSL(code);
+    } catch (e) {
+      return { participants: [], messages: [], notes: [], activations: [] };
+    }
+  }, [code]);
+
+  // Canvas selection & interactive editing callbacks
+  const handleUpdateParticipant = useCallback((oldAlias, patch) => {
+    const updated = updateParticipantInCode(codeRef.current, oldAlias, patch);
+    setCode(updated);
+    setSelectedItem((prev) => {
+      if (!prev || prev.type !== 'participant') return prev;
+      const newAlias = patch.alias !== undefined ? patch.alias.trim() : prev.data.alias;
+      return {
+        ...prev,
+        data: {
+          ...prev.data,
+          ...patch,
+          alias: newAlias,
+          styles: { ...prev.data.styles, ...(patch.styles || {}) },
+        },
+      };
+    });
+  }, []);
+
+  const handleDeleteParticipant = useCallback((alias) => {
+    const updated = deleteParticipantFromCode(codeRef.current, alias);
+    setCode(updated);
+    setSelectedItem(null);
+  }, []);
+
+  const handleUpdateMessage = useCallback((index, patch) => {
+    const updated = updateMessageInCode(codeRef.current, index, patch);
+    setCode(updated);
+    setSelectedItem((prev) => {
+      if (!prev || prev.type !== 'message') return prev;
+      return {
+        ...prev,
+        data: {
+          ...prev.data,
+          ...patch,
+          styles: { ...prev.data.styles, ...(patch.styles || {}) },
+        },
+      };
+    });
+  }, []);
+
+  const handleDeleteMessage = useCallback((index) => {
+    const updated = deleteMessageFromCode(codeRef.current, index);
+    setCode(updated);
+    setSelectedItem(null);
+  }, []);
+
+  const handleUpdateNote = useCallback((index, patch) => {
+    const updated = updateNoteInCode(codeRef.current, index, patch);
+    setCode(updated);
+    setSelectedItem((prev) => {
+      if (!prev || prev.type !== 'note') return prev;
+      return {
+        ...prev,
+        data: {
+          ...prev.data,
+          ...patch,
+          styles: { ...prev.data.styles, ...(patch.styles || {}) },
+        },
+      };
+    });
+  }, []);
+
+  const handleDeleteNote = useCallback((index) => {
+    const updated = deleteNoteFromCode(codeRef.current, index);
+    setCode(updated);
+    setSelectedItem(null);
+  }, []);
+
+  const loadExample = useCallback(() => {
+    hasAutoFittedRef.current = false;
+    setCode(DEFAULT_EXAMPLE_CODE);
+    setSelectedItem(null);
+    setTimeout(handleZoomFit, 150);
+  }, [handleZoomFit]);
+
+  // Synchronize SVG selection glow highlights
+  useEffect(() => {
+    const container = canvasElRef.current;
+    if (!container) return;
+
+    const prevSelected = container.querySelectorAll('.seq-selected');
+    prevSelected.forEach((el) => el.classList.remove('seq-selected'));
+
+    if (!selectedItem) return;
+
+    const { type, data } = selectedItem;
+    if (type === 'participant' && data.alias) {
+      const matching = container.querySelectorAll(
+        `[data-component-type="participant"][data-component-alias="${data.alias}"]`
+      );
+      matching.forEach((el) => el.classList.add('seq-selected'));
+    } else if (type === 'message' && data.index !== undefined) {
+      const matching = container.querySelectorAll(
+        `[data-component-type="message"][data-component-index="${data.index}"]`
+      );
+      matching.forEach((el) => el.classList.add('seq-selected'));
+    } else if (type === 'note' && data.index !== undefined) {
+      const matching = container.querySelectorAll(
+        `[data-component-type="note"][data-component-index="${data.index}"]`
+      );
+      matching.forEach((el) => el.classList.add('seq-selected'));
+    }
+  }, [selectedItem, code]);
+
+  // Keyboard navigation & deletion
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const active = document.activeElement;
+      if (
+        active &&
+        (active.tagName === 'INPUT' ||
+          active.tagName === 'TEXTAREA' ||
+          active.tagName === 'SELECT' ||
+          active.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        setSelectedItem(null);
+      } else if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (selectedItem) {
+          e.preventDefault();
+          if (selectedItem.type === 'participant') {
+            handleDeleteParticipant(selectedItem.data.alias);
+          } else if (selectedItem.type === 'message') {
+            handleDeleteMessage(selectedItem.data.index);
+          } else if (selectedItem.type === 'note') {
+            handleDeleteNote(selectedItem.data.index);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedItem, handleDeleteParticipant, handleDeleteMessage, handleDeleteNote]);
+
   // Drag Panning Canvas mouse handlers
   const handleCanvasMouseDown = (e) => {
     if (e.button !== 0) return; // Only left click
-    if (e.target.closest('.floating-toolbar') || e.target.closest('.parse-error-indicator')) {
+    if (
+      e.target.closest('.floating-toolbar') ||
+      e.target.closest('.sequence-properties-panel') ||
+      e.target.closest('.parse-error-indicator')
+    ) {
       return;
     }
     isPanningRef.current = true;
+    mouseDownPosRef.current = { x: e.clientX, y: e.clientY };
     panStartRef.current = { x: e.clientX - translate.x, y: e.clientY - translate.y };
   };
 
@@ -502,8 +729,62 @@ function App() {
     setTranslate({ x: tx, y: ty });
   }, []);
 
-  const handleCanvasMouseUp = useCallback(() => {
+  const handleCanvasMouseUp = useCallback((e) => {
+    if (!isPanningRef.current) return;
     isPanningRef.current = false;
+
+    // Distinguish click from drag
+    const dist = Math.hypot(
+      e.clientX - mouseDownPosRef.current.x,
+      e.clientY - mouseDownPosRef.current.y
+    );
+
+    if (dist <= 5) {
+      // Check if user clicked an interactive component
+      const selectable = e.target.closest('[data-component-type]');
+      if (selectable) {
+        const compType = selectable.getAttribute('data-component-type');
+        const compIndex = parseInt(selectable.getAttribute('data-component-index'), 10);
+        const compAlias = selectable.getAttribute('data-component-alias');
+
+        const parsed = parseSequenceDSL(codeRef.current || '');
+        if (compType === 'participant') {
+          const p =
+            parsed.participants.find(
+              (item) => item.alias.toLowerCase() === (compAlias || '').toLowerCase()
+            ) || parsed.participants[compIndex];
+
+          if (p) {
+            setSelectedItem({
+              type: 'participant',
+              data: { ...p, index: compIndex },
+            });
+            return;
+          }
+        } else if (compType === 'message') {
+          const m = parsed.messages[compIndex];
+          if (m) {
+            setSelectedItem({
+              type: 'message',
+              data: { ...m, index: compIndex },
+            });
+            return;
+          }
+        } else if (compType === 'note') {
+          const n = parsed.notes[compIndex];
+          if (n) {
+            setSelectedItem({
+              type: 'note',
+              data: { ...n, index: compIndex },
+            });
+            return;
+          }
+        }
+      }
+
+      // If clicked empty canvas, clear selection
+      setSelectedItem(null);
+    }
   }, []);
 
   // Set up panning listeners on window
@@ -880,13 +1161,25 @@ When asked to generate a sequence diagram, only output the raw DSL code. Do not 
           </div>
           
           <div className="topbar-right" style={{ gap: '6px' }}>
-            <button 
-              className={`export-icon-btn ${isGuideOpen ? 'active' : ''}`}
-              onClick={() => setIsGuideOpen(!isGuideOpen)} 
-              title="Toggle DSL Guide"
-            >
-              <i className="ri-information-line" style={{ fontSize: '16px' }}></i>
-            </button>
+            <div className="guide-btn-wrapper">
+              <button 
+                className={`export-icon-btn guide-btn ${isGuideOpen ? 'active' : ''}`}
+                onClick={() => setIsGuideOpen(!isGuideOpen)} 
+                aria-label={isGuideOpen ? 'Close syntax guidelines and documentation' : 'Help & Documentation (syntax guidelines and AI prompt)'}
+              >
+                <i className="ri-information-line" style={{ fontSize: '16px' }}></i>
+                {!isGuideOpen && <span className="guide-indicator-dot" />}
+              </button>
+              <div className="guide-tooltip">
+                <span className="guide-tooltip-title">
+                  <i className="ri-book-read-line" style={{ fontSize: '13px', color: 'var(--accent-color)' }}></i>
+                  {isGuideOpen ? 'Close Guidelines & Docs' : 'Help & Guidelines'}
+                </span>
+                <span className="guide-tooltip-subtitle">
+                  {isGuideOpen ? 'Click to hide sidebar guide' : 'Click to view syntax documentation & AI prompt'}
+                </span>
+              </div>
+            </div>
 
             <div className="topbar-divider" />
 
@@ -951,6 +1244,24 @@ When asked to generate a sequence diagram, only output the raw DSL code. Do not 
                 <i className="fa-solid fa-align-left"></i>
                 <span>Sequence DSL</span>
               </div>
+              <button
+                type="button"
+                className={`editor-guide-btn ${isGuideOpen && guideTab === 'syntax' ? 'active' : ''}`}
+                onClick={() => {
+                  if (!isGuideOpen) {
+                    setGuideTab('syntax');
+                    setIsGuideOpen(true);
+                  } else if (guideTab !== 'syntax') {
+                    setGuideTab('syntax');
+                  } else {
+                    setIsGuideOpen(false);
+                  }
+                }}
+                title="View Sequence DSL Guidelines & Examples"
+              >
+                <i className="ri-book-read-line" style={{ fontSize: '13px' }}></i>
+                <span>Guidelines</span>
+              </button>
             </div>
             
             <div className="editor-scroll-container">
@@ -1005,13 +1316,56 @@ When asked to generate a sequence diagram, only output the raw DSL code. Do not 
                 transformOrigin: '0 0' 
               }} 
             />
-          </div>          {/* Floating Controls Toolbar */}
+          </div>
+
+          {/* Empty Diagram Overlay (like UML) */}
+          {(parsedDSL.participants.length === 0 && parsedDSL.messages.length === 0 && !parseError) && (
+            <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', pointerEvents: 'none', zIndex: 10 }}>
+              <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' }}>Empty diagram</div>
+                <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>Add a participant, or write Mermaid in the Code view.</div>
+                <button
+                  type="button"
+                  onClick={loadExample}
+                  style={{
+                    marginTop: 6,
+                    pointerEvents: 'auto',
+                    height: 28,
+                    padding: '0 14px',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: 7,
+                    background: 'var(--bg-secondary)',
+                    color: 'var(--text-primary)',
+                    fontSize: 12,
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    boxShadow: 'var(--shadow-sm)',
+                    transition: 'all 0.15s ease',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'; }}
+                >
+                  Use example
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Canvas Bottom Hint */}
+          {!(parsedDSL.participants.length === 0 && parsedDSL.messages.length === 0) && (
+            <div className="canvas-hint">
+              Scroll to pan · ⌘/Ctrl + scroll to zoom · Click an element to edit
+            </div>
+          )}
+
+          {/* Floating Controls Toolbar */}
           <div className="floating-toolbar">
-            <button className="icon-btn-light" onClick={handleZoomOut} title="Zoom Out">
+            <button className="icon-btn-light" onClick={handleZoomOut} title="Zoom Out (−)">
               <i className="fa-solid fa-magnifying-glass-minus"></i>
             </button>
             <span className="zoom-indicator">{Math.round(zoom * 100)}%</span>
-            <button className="icon-btn-light" onClick={handleZoomIn} title="Zoom In">
+            <button className="icon-btn-light" onClick={handleZoomIn} title="Zoom In (+)">
               <i className="fa-solid fa-magnifying-glass-plus"></i>
             </button>
             {!isPreview && (
@@ -1025,6 +1379,21 @@ When asked to generate a sequence diagram, only output the raw DSL code. Do not 
               </>
             )}
           </div>
+
+          {/* Properties Panel for Selected Component */}
+          {selectedItem && (
+            <SequencePropertiesPanel
+              selectedItem={selectedItem}
+              participants={parsedDSL.participants}
+              onUpdateParticipant={handleUpdateParticipant}
+              onDeleteParticipant={handleDeleteParticipant}
+              onUpdateMessage={handleUpdateMessage}
+              onDeleteMessage={handleDeleteMessage}
+              onUpdateNote={handleUpdateNote}
+              onDeleteNote={handleDeleteNote}
+              onClose={() => setSelectedItem(null)}
+            />
+          )}
         </div>
       )}
 
